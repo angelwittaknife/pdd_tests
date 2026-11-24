@@ -78,6 +78,9 @@ List<CommentPiece> parseCommentHtml(String? raw) {
 
 String commentImageAsset(String src) {
   var path = src.trim().replaceAll('\\', '/');
+  if (path.startsWith('decoded/') || path.startsWith('data/')) {
+    return path;
+  }
   path = path.replaceFirst(RegExp(r'^PDD/BY/IMG/', caseSensitive: false), '');
   final slash = path.indexOf('/');
   if (slash > 0) {

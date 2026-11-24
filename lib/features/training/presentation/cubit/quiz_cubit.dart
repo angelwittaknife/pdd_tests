@@ -4,6 +4,7 @@ import 'package:pdd_tests/core/error/result.dart';
 import 'package:pdd_tests/features/training/domain/entities/question.dart';
 import 'package:pdd_tests/features/training/domain/entities/quiz_session.dart';
 import 'package:pdd_tests/features/training/domain/usecases/start_quiz.dart';
+import 'package:pdd_tests/features/training/presentation/cubit/mistake_box_cubit.dart';
 
 sealed class QuizState extends Equatable {
   const QuizState();
@@ -78,9 +79,10 @@ final class QuizInProgress extends QuizState {
 }
 
 final class QuizCubit extends Cubit<QuizState> {
-  QuizCubit(this._startQuiz) : super(const QuizLoading());
+  QuizCubit(this._startQuiz, {this._mistakes}) : super(const QuizLoading());
 
   final StartQuiz _startQuiz;
+  final MistakeRecord? _mistakes;
   QuizRequest? _request;
 
   Future<void> load(QuizRequest request) async {
@@ -130,6 +132,26 @@ final class QuizCubit extends Cubit<QuizState> {
     final selected = Map<int, int>.of(current.selectedAnswerIds);
     selected[question.id] = answerId;
     emit(current.copyWith(selectedAnswerIds: selected));
+    final correct = question.answers.any(
+      (answer) => answer.id == answerId && answer.isCorrect,
+    );
+    if (correct) {
+      _mistakes?.forget(question.id);
+    } else {
+      _mistakes?.remember(question.id);
+    }
+  }
+
+  void selectAnswerAt(int index) {
+    final current = state;
+    if (current is! QuizInProgress || current.showingResult) {
+      return;
+    }
+    final answers = current.current.answers;
+    if (index < 0 || index >= answers.length) {
+      return;
+    }
+    selectAnswer(answers[index].id);
   }
 
   void openQuestion(int index) {

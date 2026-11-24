@@ -28,9 +28,10 @@ class ZoomableAssetImage extends StatelessWidget {
           height: height,
           width: double.infinity,
           alignment: Alignment.center,
-          color: PddColors.imageBackdrop,
+          color: context.pdd.imageBackdrop,
           child: Image.asset(
             assetPath,
+            width: double.infinity,
             height: height,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {

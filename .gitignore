@@ -59,3 +59,6 @@ app.*.map.json
 # Исходники установщика и вторая программа. Экраны читают data/open_source_tests1.
 /exes/
 /data/open_source_tests2/
+
+# Дизассемблинг pdd_educ. Производное от /exes/.
+/disasm/

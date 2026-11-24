@@ -31,5 +31,8 @@ String? questionImageAsset(Object? value) {
   if (name.isEmpty) {
     return null;
   }
+  if (name.contains('/')) {
+    return name;
+  }
   return 'data/open_source_tests1/images/$name';
 }

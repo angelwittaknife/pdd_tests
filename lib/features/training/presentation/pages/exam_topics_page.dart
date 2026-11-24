@@ -6,6 +6,8 @@ import 'package:pdd_tests/features/training/domain/usecases/start_quiz.dart';
 import 'package:pdd_tests/features/training/presentation/format.dart';
 import 'package:pdd_tests/features/training/presentation/pages/exam_setup_page.dart';
 import 'package:pdd_tests/features/training/presentation/pages/quiz_page.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/pdd_frame.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/theme_brightness_button.dart';
 import 'package:pdd_tests/features/training/presentation/widgets/topic_tile.dart';
 
 class ExamTopicsPage extends StatefulWidget {
@@ -71,33 +73,38 @@ class _ExamTopicsPageState extends State<ExamTopicsPage> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Зачёты')),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              'Сейчас ${ruCount(_tickets, 'билет', 'билета', 'билетов')}, '
-              '${examAllowance(_mistakes)}. '
-              'Откройте тему, чтобы изменить и начать.',
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+      appBar: AppBar(
+        title: const Text('Зачёты'),
+        actions: const [ThemeBrightnessButton()],
+      ),
+      body: PddFrame(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                'Сейчас ${ruCount(_tickets, 'билет', 'билета', 'билетов')}, '
+                '${examAllowance(_mistakes)}. '
+                'Откройте тему, чтобы изменить и начать.',
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+              ),
             ),
-          ),
-          for (final (section, label) in sections)
-            if (widget.topics.any((topic) => topic.section == section)) ...[
-              SectionLabel(label),
-              for (final topic in widget.topics.where(
-                (item) => item.section == section,
-              ))
-                TopicTile(
-                  title: topic.title,
-                  subtitle: _meta(topic),
-                  onTap: () => _open(topic),
-                ),
-            ],
-        ],
+            for (final (section, label) in sections)
+              if (widget.topics.any((topic) => topic.section == section)) ...[
+                SectionLabel(label),
+                for (final topic in widget.topics.where(
+                  (item) => item.section == section,
+                ))
+                  TopicTile(
+                    title: topic.title,
+                    subtitle: _meta(topic),
+                    onTap: () => _open(topic),
+                  ),
+              ],
+          ],
+        ),
       ),
     );
   }

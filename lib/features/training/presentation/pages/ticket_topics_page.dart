@@ -3,6 +3,8 @@ import 'package:pdd_tests/features/training/domain/entities/catalog.dart';
 import 'package:pdd_tests/features/training/domain/usecases/start_quiz.dart';
 import 'package:pdd_tests/features/training/presentation/format.dart';
 import 'package:pdd_tests/features/training/presentation/pages/ticket_numbers_page.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/pdd_frame.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/theme_brightness_button.dart';
 import 'package:pdd_tests/features/training/presentation/widgets/topic_tile.dart';
 
 class TicketTopicsPage extends StatelessWidget {
@@ -24,32 +26,37 @@ class TicketTopicsPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Билеты')),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
-        children: [
-          for (final (section, label) in sections)
-            if (topics.any((topic) => topic.section == section)) ...[
-              SectionLabel(label),
-              for (final topic in topics.where(
-                (item) => item.section == section,
-              ))
-                TopicTile(
-                  title: topic.title,
-                  subtitle: _meta(topic),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => TicketNumbersPage(
-                          topic: topic,
-                          startQuiz: startQuiz,
+      appBar: AppBar(
+        title: const Text('Билеты'),
+        actions: const [ThemeBrightnessButton()],
+      ),
+      body: PddFrame(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            for (final (section, label) in sections)
+              if (topics.any((topic) => topic.section == section)) ...[
+                SectionLabel(label),
+                for (final topic in topics.where(
+                  (item) => item.section == section,
+                ))
+                  TopicTile(
+                    title: topic.title,
+                    subtitle: _meta(topic),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => TicketNumbersPage(
+                            topic: topic,
+                            startQuiz: startQuiz,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-            ],
-        ],
+                      );
+                    },
+                  ),
+              ],
+          ],
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:pdd_tests/features/training/domain/entities/catalog.dart';
 import 'package:pdd_tests/features/training/domain/entities/question.dart';
 import 'package:pdd_tests/features/training/domain/entities/quiz_session.dart';
 import 'package:pdd_tests/features/training/domain/usecases/start_quiz.dart';
+import 'package:pdd_tests/features/training/presentation/cubit/mistake_box_cubit.dart';
 import 'package:pdd_tests/features/training/presentation/cubit/quiz_cubit.dart';
 
 import 'support/fake_training_repository.dart';
@@ -33,7 +34,7 @@ void main() {
     ],
   );
 
-  QuizCubit cubit() {
+  QuizCubit cubit({MistakeRecord? mistakes}) {
     return QuizCubit(
       StartQuiz(
         FakeTrainingRepository(
@@ -41,6 +42,7 @@ void main() {
           session: session,
         ),
       ),
+      mistakes: mistakes,
     );
   }
 
@@ -61,6 +63,9 @@ void main() {
       quiz.openQuestion(1);
       expect((quiz.state as QuizInProgress).index, 0);
 
+      quiz.selectAnswerAt(8);
+      expect((quiz.state as QuizInProgress).selectedAnswerIds, isEmpty);
+
       quiz.selectAnswer(10);
       quiz.selectAnswer(11);
       expect((quiz.state as QuizInProgress).selectedAnswerIds[1], 10);
@@ -79,4 +84,43 @@ void main() {
       expect(done.correctCount, 1);
     },
   );
+
+  test('a wrong answer enters the box and a right answer leaves it', () async {
+    final box = _MemoryMistakes([2]);
+    final quiz = cubit(mistakes: box);
+    addTearDown(quiz.close);
+
+    await quiz.load(
+      const TicketQuizRequest(
+        catTicketId: 211,
+        ticketNumber: 1,
+        title: 'Билет 1',
+      ),
+    );
+
+    quiz.selectAnswer(10);
+    expect(box.ids, [2, 1]);
+
+    quiz.next();
+    quiz.selectAnswer(20);
+    expect(box.ids, [1]);
+  });
+}
+
+final class _MemoryMistakes implements MistakeRecord {
+  _MemoryMistakes(this.ids);
+
+  final List<int> ids;
+
+  @override
+  void remember(int questionId) {
+    if (!ids.contains(questionId)) {
+      ids.add(questionId);
+    }
+  }
+
+  @override
+  void forget(int questionId) {
+    ids.remove(questionId);
+  }
 }

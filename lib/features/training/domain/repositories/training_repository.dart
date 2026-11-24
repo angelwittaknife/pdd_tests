@@ -22,4 +22,6 @@ abstract interface class TrainingRepository {
     required int ticketCount,
     required int allowedMistakes,
   });
+
+  Future<Result<QuizSession>> loadMistakes({required List<int> questionIds});
 }

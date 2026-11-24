@@ -35,6 +35,9 @@ final class StartQuiz implements UseCase<QuizSession, QuizRequest> {
           ticketCount: ticketCount,
           allowedMistakes: allowedMistakes,
         ),
+      MistakeQuizRequest(:final questionIds) => _repository.loadMistakes(
+        questionIds: questionIds,
+      ),
     };
   }
 }

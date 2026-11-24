@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pdd_tests/features/training/presentation/theme/pdd_theme.dart';
 
 class TopicTile extends StatelessWidget {
   const TopicTile({
@@ -18,7 +19,7 @@ class TopicTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Material(
-        color: scheme.surface,
+        color: context.pdd.card,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
           side: BorderSide(color: scheme.outlineVariant),

@@ -4,6 +4,8 @@ import 'package:pdd_tests/features/training/domain/entities/quiz_session.dart';
 import 'package:pdd_tests/features/training/domain/usecases/start_quiz.dart';
 import 'package:pdd_tests/features/training/presentation/format.dart';
 import 'package:pdd_tests/features/training/presentation/pages/quiz_page.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/pdd_frame.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/theme_brightness_button.dart';
 import 'package:pdd_tests/features/training/presentation/widgets/topic_tile.dart';
 
 class ChaptersPage extends StatelessWidget {
@@ -19,46 +21,51 @@ class ChaptersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Главы')),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
-        children: [
-          for (final topic in topics) ...[
-            SectionLabel(topic.title),
-            if (topic.subtitle.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(
-                  topic.subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+      appBar: AppBar(
+        title: const Text('Главы'),
+        actions: const [ThemeBrightnessButton()],
+      ),
+      body: PddFrame(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            for (final topic in topics) ...[
+              SectionLabel(topic.title),
+              if (topic.subtitle.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(
+                    topic.subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-            for (final chapter in topic.chapters)
-              TopicTile(
-                title: chapter.name,
-                subtitle: _meta(chapter),
-                onTap: () {
-                  final title =
-                      chapter.title.isEmpty || chapter.title == chapter.name
-                      ? chapter.name
-                      : '${chapter.name}. ${chapter.title}';
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => QuizPage(
-                        startQuiz: startQuiz,
-                        request: ChapterQuizRequest(
-                          chapterId: chapter.id,
-                          title: title,
+              for (final chapter in topic.chapters)
+                TopicTile(
+                  title: chapter.name,
+                  subtitle: _meta(chapter),
+                  onTap: () {
+                    final title =
+                        chapter.title.isEmpty || chapter.title == chapter.name
+                        ? chapter.name
+                        : '${chapter.name}. ${chapter.title}';
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => QuizPage(
+                          startQuiz: startQuiz,
+                          request: ChapterQuizRequest(
+                            chapterId: chapter.id,
+                            title: title,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

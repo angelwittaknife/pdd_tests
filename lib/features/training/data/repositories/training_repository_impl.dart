@@ -121,6 +121,16 @@ final class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
+  @override
+  Future<Result<QuizSession>> loadMistakes({required List<int> questionIds}) {
+    return _session(
+      ids: () async => questionIds,
+      emptyMessage: 'В коробке нет вопросов.',
+      kind: QuizKind.mistakes,
+      title: 'Коробка ошибок',
+    );
+  }
+
   Future<Result<QuizSession>> _session({
     required Future<List<int>> Function() ids,
     required String emptyMessage,

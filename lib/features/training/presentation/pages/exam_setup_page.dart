@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:pdd_tests/features/training/domain/entities/catalog.dart';
 import 'package:pdd_tests/features/training/domain/exam_rules.dart';
 import 'package:pdd_tests/features/training/presentation/format.dart';
+import 'package:pdd_tests/features/training/presentation/theme/pdd_theme.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/pdd_frame.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/theme_brightness_button.dart';
 
 final class ExamChoice {
   const ExamChoice({required this.tickets, required this.mistakes});
@@ -78,74 +81,86 @@ class _ExamSetupPageState extends State<ExamSetupPage> {
     final questionCap = ExamRules.mistakeLimit(_tickets);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.topic.title)),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              children: [
-                Text(
-                  widget.topic.subtitle.isEmpty
-                      ? 'В теме ${ruCount(available, 'билет', 'билета', 'билетов')}.'
-                      : '${widget.topic.subtitle}. В теме ${ruCount(available, 'билет', 'билета', 'билетов')}.',
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Берутся случайные билеты целиком. В билете до 10 вопросов.',
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
-                ),
-                const SizedBox(height: 20),
-                _CountControl(
-                  label: 'Билеты',
-                  detail: ruCount(_tickets, 'билет', 'билета', 'билетов'),
-                  value: _tickets,
-                  min: 1,
-                  max: available,
-                  valueKey: const Key('exam-ticket-count'),
-                  lessKey: const Key('exam-ticket-less'),
-                  moreKey: const Key('exam-ticket-more'),
-                  onChanged: _setTickets,
-                ),
-                const SizedBox(height: 12),
-                _CountControl(
-                  label: 'Ошибки',
-                  detail: examAllowance(_mistakes),
-                  value: _mistakes,
-                  min: 0,
-                  max: questionCap,
-                  valueKey: const Key('exam-mistake-count'),
-                  lessKey: const Key('exam-mistake-less'),
-                  moreKey: const Key('exam-mistake-more'),
-                  onChanged: _setMistakes,
-                ),
-              ],
+      appBar: AppBar(
+        title: Text(widget.topic.title),
+        actions: const [ThemeBrightnessButton()],
+      ),
+      body: PddFrame(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                children: [
+                  Text(
+                    widget.topic.subtitle.isEmpty
+                        ? 'В теме ${ruCount(available, 'билет', 'билета', 'билетов')}.'
+                        : '${widget.topic.subtitle}. В теме ${ruCount(available, 'билет', 'билета', 'билетов')}.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Берутся случайные билеты целиком. В билете до 10 вопросов.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _CountControl(
+                    label: 'Билеты',
+                    detail: ruCount(_tickets, 'билет', 'билета', 'билетов'),
+                    value: _tickets,
+                    min: 1,
+                    max: available,
+                    valueKey: const Key('exam-ticket-count'),
+                    lessKey: const Key('exam-ticket-less'),
+                    moreKey: const Key('exam-ticket-more'),
+                    onChanged: _setTickets,
+                  ),
+                  const SizedBox(height: 12),
+                  _CountControl(
+                    label: 'Ошибки',
+                    detail: examAllowance(_mistakes),
+                    value: _mistakes,
+                    min: 0,
+                    max: questionCap,
+                    valueKey: const Key('exam-mistake-count'),
+                    lessKey: const Key('exam-mistake-less'),
+                    moreKey: const Key('exam-mistake-more'),
+                    onChanged: _setMistakes,
+                  ),
+                ],
+              ),
             ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  key: const Key('exam-start'),
-                  onPressed: available < 1
-                      ? null
-                      : () {
-                          Navigator.of(context).pop(
-                            ExamChoice(tickets: _tickets, mistakes: _mistakes),
-                          );
-                        },
-                  child: const Text('Начать зачёт'),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    key: const Key('exam-start'),
+                    onPressed: available < 1
+                        ? null
+                        : () {
+                            Navigator.of(context).pop(
+                              ExamChoice(
+                                tickets: _tickets,
+                                mistakes: _mistakes,
+                              ),
+                            );
+                          },
+                    child: const Text('Начать зачёт'),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -180,7 +195,7 @@ class _CountControl extends StatelessWidget {
     final span = max - min;
 
     return Material(
-      color: scheme.surface,
+      color: context.pdd.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: scheme.outlineVariant),

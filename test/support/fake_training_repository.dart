@@ -46,6 +46,25 @@ final class FakeTrainingRepository implements TrainingRepository {
     );
   }
 
+  @override
+  Future<Result<QuizSession>> loadMistakes({
+    required List<int> questionIds,
+  }) async {
+    final questions = [
+      for (final id in questionIds)
+        if (session.questions.any((question) => question.id == id))
+          session.questions.firstWhere((question) => question.id == id),
+    ];
+    return Success(
+      QuizSession(
+        kind: QuizKind.mistakes,
+        title: 'Коробка ошибок',
+        questions: questions,
+        allowedMistakes: null,
+      ),
+    );
+  }
+
   QuizSession _titled(String title) {
     return QuizSession(
       kind: session.kind,

@@ -1,11 +1,17 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pdd_tests/features/training/domain/entities/question.dart';
 import 'package:pdd_tests/features/training/domain/entities/quiz_session.dart';
 import 'package:pdd_tests/features/training/domain/usecases/start_quiz.dart';
+import 'package:pdd_tests/features/training/presentation/cubit/mistake_box_cubit.dart';
 import 'package:pdd_tests/features/training/presentation/cubit/quiz_cubit.dart';
 import 'package:pdd_tests/features/training/presentation/theme/pdd_theme.dart';
 import 'package:pdd_tests/features/training/presentation/widgets/comment_view.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/pdd_frame.dart';
+import 'package:pdd_tests/features/training/presentation/widgets/theme_brightness_button.dart';
 import 'package:pdd_tests/features/training/presentation/widgets/zoomable_asset_image.dart';
 
 class QuizPage extends StatelessWidget {
@@ -17,7 +23,15 @@ class QuizPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => QuizCubit(startQuiz)..load(request),
+      create: (context) {
+        MistakeBoxCubit? mistakes;
+        try {
+          mistakes = context.read<MistakeBoxCubit>();
+        } on ProviderNotFoundException {
+          mistakes = null;
+        }
+        return QuizCubit(startQuiz, mistakes: mistakes)..load(request);
+      },
       child: const _QuizView(),
     );
   }
@@ -34,19 +48,90 @@ class _QuizView extends StatelessWidget {
           QuizInProgress(:final session) => session.title,
           _ => 'Вопрос',
         };
-        return Scaffold(
-          appBar: AppBar(title: Text(title, overflow: TextOverflow.ellipsis)),
-          body: switch (state) {
-            QuizLoading() => const Center(child: CircularProgressIndicator()),
-            QuizLoadFailure(:final message) => _LoadFailure(message: message),
-            QuizInProgress() when state.showingResult => _Result(state: state),
-            QuizInProgress() => _QuestionStep(state: state),
-          },
+        final solving = state is QuizInProgress && !state.showingResult;
+        return Shortcuts(
+          shortcuts: solving ? _solvingShortcuts : const {},
+          child: Actions(
+            actions: <Type, Action<Intent>>{
+              _ContinueQuizIntent: CallbackAction<_ContinueQuizIntent>(
+                onInvoke: (_) {
+                  context.read<QuizCubit>().next();
+                  return null;
+                },
+              ),
+              _PreviousQuizIntent: CallbackAction<_PreviousQuizIntent>(
+                onInvoke: (_) {
+                  context.read<QuizCubit>().previous();
+                  return null;
+                },
+              ),
+              _SelectAnswerIntent: CallbackAction<_SelectAnswerIntent>(
+                onInvoke: (intent) {
+                  context.read<QuizCubit>().selectAnswerAt(intent.index);
+                  return null;
+                },
+              ),
+            },
+            child: Focus(
+              autofocus: true,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text(title, overflow: TextOverflow.ellipsis),
+                  actions: const [ThemeBrightnessButton()],
+                ),
+                body: PddFrame(
+                  child: switch (state) {
+                    QuizLoading() => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    QuizLoadFailure(:final message) => _LoadFailure(
+                      message: message,
+                    ),
+                    QuizInProgress() when state.showingResult => _Result(
+                      state: state,
+                    ),
+                    QuizInProgress() => _QuestionStep(state: state),
+                  },
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
   }
 }
+
+final class _ContinueQuizIntent extends Intent {
+  const _ContinueQuizIntent();
+}
+
+final class _PreviousQuizIntent extends Intent {
+  const _PreviousQuizIntent();
+}
+
+final class _SelectAnswerIntent extends Intent {
+  const _SelectAnswerIntent(this.index);
+
+  final int index;
+}
+
+const _solvingShortcuts = <ShortcutActivator, Intent>{
+  SingleActivator(LogicalKeyboardKey.enter): _ContinueQuizIntent(),
+  SingleActivator(LogicalKeyboardKey.numpadEnter): _ContinueQuizIntent(),
+  SingleActivator(LogicalKeyboardKey.arrowRight): _ContinueQuizIntent(),
+  SingleActivator(LogicalKeyboardKey.arrowLeft): _PreviousQuizIntent(),
+  SingleActivator(LogicalKeyboardKey.digit1): _SelectAnswerIntent(0),
+  SingleActivator(LogicalKeyboardKey.digit2): _SelectAnswerIntent(1),
+  SingleActivator(LogicalKeyboardKey.digit3): _SelectAnswerIntent(2),
+  SingleActivator(LogicalKeyboardKey.digit4): _SelectAnswerIntent(3),
+  SingleActivator(LogicalKeyboardKey.digit5): _SelectAnswerIntent(4),
+  SingleActivator(LogicalKeyboardKey.numpad1): _SelectAnswerIntent(0),
+  SingleActivator(LogicalKeyboardKey.numpad2): _SelectAnswerIntent(1),
+  SingleActivator(LogicalKeyboardKey.numpad3): _SelectAnswerIntent(2),
+  SingleActivator(LogicalKeyboardKey.numpad4): _SelectAnswerIntent(3),
+  SingleActivator(LogicalKeyboardKey.numpad5): _SelectAnswerIntent(4),
+};
 
 class _LoadFailure extends StatelessWidget {
   const _LoadFailure({required this.message});
@@ -142,9 +227,19 @@ class _QuestionStep extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             children: [
               if (question.imageAsset != null) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: ZoomableAssetImage(assetPath: question.imageAsset!),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    final cap = MediaQuery.sizeOf(context).height * 0.72;
+                    final height = math.min(width * 3 / 4, cap);
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: ZoomableAssetImage(
+                        assetPath: question.imageAsset!,
+                        height: height,
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
               ],
@@ -175,34 +270,39 @@ class _QuestionStep extends StatelessWidget {
             ],
           ),
         ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Row(
-              children: [
-                if (state.index > 0)
-                  TextButton(
-                    onPressed: cubit.previous,
-                    child: const Text('Назад'),
-                  ),
-                const Spacer(),
-                if (!revealed)
-                  Text(
-                    'Выберите ответ',
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: scheme.onSurfaceVariant),
-                  )
-                else
-                  FilledButton(
-                    onPressed: cubit.next,
-                    child: Text(
-                      state.index == questions.length - 1
-                          ? 'Результат'
-                          : 'Дальше',
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: scheme.outlineVariant)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                children: [
+                  if (state.index > 0)
+                    TextButton(
+                      onPressed: cubit.previous,
+                      child: const Text('Назад'),
                     ),
-                  ),
-              ],
+                  const Spacer(),
+                  if (!revealed)
+                    Text(
+                      '1–${question.answers.length} — ответ, Enter — дальше',
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: scheme.onSurfaceVariant),
+                    )
+                  else
+                    FilledButton(
+                      onPressed: cubit.next,
+                      child: Text(
+                        state.index == questions.length - 1
+                            ? 'Результат'
+                            : 'Дальше',
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -227,16 +327,17 @@ class _ProgressChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final palette = context.pdd;
     final Color fill;
     final Color foreground;
     if (correct == true) {
-      fill = PddColors.correct;
-      foreground = Colors.white;
+      fill = palette.correct;
+      foreground = palette.onCorrect;
     } else if (correct == false) {
-      fill = PddColors.wrong;
-      foreground = Colors.white;
+      fill = palette.wrong;
+      foreground = palette.onWrong;
     } else {
-      fill = scheme.surface;
+      fill = palette.card;
       foreground = scheme.onSurface;
     }
 
@@ -288,6 +389,7 @@ class _AnswerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final palette = context.pdd;
     final showCorrect = revealed && answer.isCorrect;
     final showWrong = revealed && selected && !answer.isCorrect;
 
@@ -296,17 +398,17 @@ class _AnswerTile extends StatelessWidget {
     final Color badgeFill;
     final Color badgeText;
     if (showCorrect) {
-      fill = PddColors.correctFill;
-      border = PddColors.correct;
-      badgeFill = PddColors.correct;
-      badgeText = Colors.white;
+      fill = palette.correctFill;
+      border = palette.correct;
+      badgeFill = palette.correct;
+      badgeText = palette.onCorrect;
     } else if (showWrong) {
-      fill = PddColors.wrongFill;
-      border = PddColors.wrong;
-      badgeFill = PddColors.wrong;
-      badgeText = Colors.white;
+      fill = palette.wrongFill;
+      border = palette.wrong;
+      badgeFill = palette.wrong;
+      badgeText = palette.onWrong;
     } else {
-      fill = scheme.surface;
+      fill = palette.card;
       border = scheme.outlineVariant;
       badgeFill = scheme.surfaceContainerHighest;
       badgeText = scheme.onSurface;
@@ -380,6 +482,7 @@ class _Result extends StatelessWidget {
     final allowed = state.session.allowedMistakes;
     final passed = allowed != null && mistakes <= allowed;
     final scheme = Theme.of(context).colorScheme;
+    final palette = context.pdd;
 
     return Column(
       children: [
@@ -391,16 +494,46 @@ class _Result extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Column(
                     children: [
-                      Text(
-                        '$correct / $total',
-                        style: Theme.of(context).textTheme.displaySmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'верных ответов',
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(color: scheme.onSurfaceVariant),
+                      SizedBox(
+                        width: 156,
+                        height: 156,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 156,
+                              height: 156,
+                              child: CircularProgressIndicator(
+                                value: total == 0 ? 0 : correct / total,
+                                strokeWidth: 10,
+                                strokeCap: StrokeCap.round,
+                                backgroundColor: scheme.surfaceContainerHighest,
+                                color: mistakes == 0
+                                    ? palette.correct
+                                    : scheme.primary,
+                              ),
+                            ),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$correct / $total',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                                Text(
+                                  'верных ответов',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       if (allowed != null) ...[
                         const SizedBox(height: 12),
@@ -412,17 +545,15 @@ class _Result extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: passed
-                                ? PddColors.correctFill
-                                : PddColors.wrongFill,
+                                ? palette.correctFill
+                                : palette.wrongFill,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             passed ? 'Зачёт сдан' : 'Зачёт не сдан',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: passed
-                                  ? PddColors.correct
-                                  : PddColors.wrong,
+                              color: passed ? palette.correct : palette.wrong,
                               fontWeight: FontWeight.w700,
                               fontSize: 18,
                             ),
@@ -446,9 +577,7 @@ class _Result extends StatelessWidget {
                   return ListTile(
                     leading: Icon(
                       correctAnswer ? Icons.check_circle : Icons.cancel,
-                      color: correctAnswer
-                          ? PddColors.correct
-                          : PddColors.wrong,
+                      color: correctAnswer ? palette.correct : palette.wrong,
                     ),
                     title: Text(
                       question.text,
@@ -462,26 +591,31 @@ class _Result extends StatelessWidget {
             ],
           ),
         ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: cubit.reviewMistakes,
-                    child: const Text('Разобрать'),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: scheme.outlineVariant)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: cubit.reviewMistakes,
+                      child: const Text('Разобрать'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Закрыть'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Закрыть'),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

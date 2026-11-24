@@ -32,6 +32,17 @@ void main() {
     );
   });
 
+  test('keeps a release-22 sign path', () {
+    final pieces = parseCommentHtml(
+      '<p><img src="decoded/signs/Z040203.png" /></p>',
+    );
+
+    expect(
+      pieces.whereType<CommentImagePiece>().single.assetPath,
+      'decoded/signs/Z040203.png',
+    );
+  });
+
   test('turns list items into bullets', () {
     final pieces = parseCommentHtml('<ul><li>права</li><li>паспорт</li></ul>');
     final text = pieces

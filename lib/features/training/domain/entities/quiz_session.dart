@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:pdd_tests/features/training/domain/entities/question.dart';
 
-enum QuizKind { ticket, chapter, exam }
+enum QuizKind { ticket, chapter, exam, mistakes }
 
 final class QuizSession extends Equatable {
   const QuizSession({
@@ -66,4 +66,13 @@ final class ExamQuizRequest extends QuizRequest {
 
   @override
   List<Object?> get props => [catTicketId, title, ticketCount, allowedMistakes];
+}
+
+final class MistakeQuizRequest extends QuizRequest {
+  const MistakeQuizRequest({required this.questionIds});
+
+  final List<int> questionIds;
+
+  @override
+  List<Object?> get props => [questionIds];
 }

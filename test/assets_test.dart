@@ -22,5 +22,12 @@ void main() {
     expect(picture.lengthInBytes, greaterThan(100));
     expect(sign.lengthInBytes, greaterThan(100));
     expect(medicine.lengthInBytes, greaterThan(100));
+
+    final release22 = await rootBundle.load('decoded/questions.sqlite');
+    final releaseSign = await rootBundle.load('decoded/signs/Z040203.png');
+    final releasePicture = await rootBundle.load('decoded/images/11383307.jpg');
+    expect(release22.lengthInBytes, greaterThan(1000000));
+    expect(releaseSign.lengthInBytes, greaterThan(100));
+    expect(releasePicture.lengthInBytes, greaterThan(100));
   });
 }

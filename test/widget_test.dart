@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdd_tests/app/pdd_app.dart';
 import 'package:pdd_tests/features/training/domain/entities/catalog.dart';
@@ -54,6 +55,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Билеты по темам'), findsOneWidget);
+    expect(find.text('Коробка ошибок'), findsOneWidget);
     expect(find.text('Вопросы по главам'), findsOneWidget);
     expect(find.text('Зачёты по темам'), findsOneWidget);
 
@@ -67,10 +69,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Показанный участок — перекрёсток?'), findsOneWidget);
-    await tester.tap(find.text('Нет, не является.'));
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text('Показанный участок — перекрёсток?'), findsOneWidget);
+    expect(find.text('Билеты по темам'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
     await tester.pumpAndSettle();
 
     expect(find.text('Перекрёстка нет.'), findsOneWidget);
     expect(find.text('Пояснение'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text('1 / 1'), findsOneWidget);
+    expect(find.text('верных ответов'), findsOneWidget);
+    expect(find.text('Билеты по темам'), findsNothing);
   });
 }

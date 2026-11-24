@@ -71,6 +71,9 @@ flutter:
     - data/open_source_tests1/by/IMG/specsign/
     - data/open_source_tests1/by/IMG/med/
     - data/open_source_tests1/by/IMG/light/
+    - decoded/questions.sqlite
+    - decoded/signs/
+    - decoded/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
