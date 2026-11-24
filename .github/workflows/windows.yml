@@ -1,0 +1,35 @@
+name: Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Build
+        run: flutter build windows --release
+
+      - name: Upload the app folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdd_tests-windows
+          path: build/windows/x64/runner/Release/*
+          if-no-files-found: error
